@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>SAP Problem Posting Monitoring</title>
+
+<style>
+
+body{
+font-family:Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+}
+
+h1{
+margin-top:30px;
+}
+
+input{
+padding:10px;
+width:300px;
+margin:20px;
+border-radius:5px;
+border:none;
+}
+
+table{
+border-collapse:collapse;
+margin:auto;
+width:95%;
+background:white;
+color:black;
+}
+
+th,td{
+padding:10px;
+border:1px solid #ddd;
+font-size:14px;
+}
+
+th{
+background:#1e293b;
+color:white;
+}
+
+.status-open{
+background:#ef4444;
+color:white;
+}
+
+.status-progress{
+background:#facc15;
+}
+
+.status-close{
+background:#22c55e;
+color:white;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>SAP PROBLEM POSTING MONITORING</h1>
+
+<input type="text" id="search" placeholder="Search NO RESERVASI">
+
+<table id="table">
+<thead>
+
+<tr>
+<th>NO RESERVASI</th>
+<th>ITEM</th>
+<th>PART NUMBER</th>
+<th>PROBLEM</th>
+<th>PIC</th>
+<th>TANGGAL</th>
+<th>STATUS</th>
+<th>FOTO</th>
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+<script>
+
+const sheetURL="https://docs.google.com/spreadsheets/d/e/2PACX-1vTfCG1zhLg7Kpa3ougm7vm3dx4UnRU4DcUfV8Bl5HplgvQhjH9xXNr-VS7Uy258VBvV8JKnwkMwfziy/pub?gid=1326491725&single=true&output=csv";
+
+fetch(sheetURL)
+.then(res=>res.text())
+.then(data=>{
+
+let rows=data.split("\n").slice(1);
+let table=document.querySelector("tbody");
+
+rows.forEach(row=>{
+
+let cols=row.split(",");
+
+let status=cols[15];
+
+let statusClass="";
+
+if(status==="Open") statusClass="status-open";
+if(status==="Progress") statusClass="status-progress";
+if(status==="Close") statusClass="status-close";
+
+let tr=document.createElement("tr");
+
+tr.innerHTML=`
+
+<td>${cols[3]}</td>
+<td>${cols[4]}</td>
+<td>${cols[5]}</td>
+<td>${cols[9]}</td>
+<td>${cols[8]}</td>
+<td>${cols[10]}</td>
+<td class="${statusClass}">${status}</td>
+<td><a href="${cols[11]}" target="_blank">View</a></td>
+
+`;
+
+table.appendChild(tr);
+
+});
+
+});
+
+</script>
+
+</body>
+</html>
