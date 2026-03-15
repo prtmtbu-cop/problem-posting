@@ -2,7 +2,9 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>SAP Problem Posting Monitoring</title>
+<title>SAP Problem Posting Dashboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
@@ -10,32 +12,57 @@ body{
 font-family:Arial;
 background:#0f172a;
 color:white;
-text-align:center;
+margin:0;
+padding:20px;
 }
 
 h1{
-margin-top:30px;
+text-align:center;
+margin-bottom:30px;
+}
+
+.dashboard{
+display:flex;
+gap:20px;
+justify-content:center;
+margin-bottom:30px;
+}
+
+.card{
+background:#1e293b;
+padding:20px;
+border-radius:10px;
+width:200px;
+text-align:center;
+}
+
+.card h2{
+margin:10px 0;
+font-size:30px;
+}
+
+.search{
+text-align:center;
+margin-bottom:20px;
 }
 
 input{
 padding:10px;
 width:300px;
-margin:20px;
 border-radius:5px;
 border:none;
 }
 
 table{
+width:100%;
 border-collapse:collapse;
-margin:auto;
-width:95%;
 background:white;
 color:black;
 }
 
 th,td{
 padding:10px;
-border:1px solid #ddd;
+border-bottom:1px solid #ddd;
 font-size:14px;
 }
 
@@ -44,18 +71,33 @@ background:#1e293b;
 color:white;
 }
 
+tr:hover{
+background:#f1f5f9;
+}
+
 .status-open{
 background:#ef4444;
 color:white;
+padding:5px 10px;
+border-radius:5px;
 }
 
 .status-progress{
 background:#facc15;
+padding:5px 10px;
+border-radius:5px;
 }
 
 .status-close{
 background:#22c55e;
 color:white;
+padding:5px 10px;
+border-radius:5px;
+}
+
+.chart{
+width:400px;
+margin:40px auto;
 }
 
 </style>
@@ -65,22 +107,51 @@ color:white;
 
 <h1>SAP PROBLEM POSTING MONITORING</h1>
 
-<input type="text" id="search" placeholder="Search NO RESERVASI">
+<div class="dashboard">
+
+<div class="card">
+Total Case
+<h2 id="total">0</h2>
+</div>
+
+<div class="card">
+Open
+<h2 id="open">0</h2>
+</div>
+
+<div class="card">
+Progress
+<h2 id="progress">0</h2>
+</div>
+
+<div class="card">
+Close
+<h2 id="close">0</h2>
+</div>
+
+</div>
+
+<div class="chart">
+<canvas id="chart"></canvas>
+</div>
+
+<div class="search">
+<input type="text" id="search" placeholder="Search NO Reservasi">
+</div>
 
 <table id="table">
+
 <thead>
-
 <tr>
-<th>NO RESERVASI</th>
-<th>ITEM</th>
-<th>PART NUMBER</th>
-<th>PROBLEM</th>
+<th>Reservasi</th>
+<th>Item</th>
+<th>Part Number</th>
+<th>Problem</th>
 <th>PIC</th>
-<th>TANGGAL</th>
-<th>STATUS</th>
-<th>FOTO</th>
+<th>Tanggal</th>
+<th>Status</th>
+<th>Foto</th>
 </tr>
-
 </thead>
 
 <tbody></tbody>
@@ -90,6 +161,10 @@ color:white;
 <script>
 
 const sheetURL="https://docs.google.com/spreadsheets/d/e/2PACX-1vTfCG1zhLg7Kpa3ougm7vm3dx4UnRU4DcUfV8Bl5HplgvQhjH9xXNr-VS7Uy258VBvV8JKnwkMwfziy/pub?gid=1326491725&single=true&output=csv";
+
+let openCount=0;
+let progressCount=0;
+let closeCount=0;
 
 fetch(sheetURL)
 .then(res=>res.text())
@@ -103,6 +178,10 @@ rows.forEach(row=>{
 let cols=row.split(",");
 
 let status=cols[15];
+
+if(status==="Open") openCount++;
+if(status==="Progress") progressCount++;
+if(status==="Close") closeCount++;
 
 let statusClass="";
 
@@ -120,12 +199,56 @@ tr.innerHTML=`
 <td>${cols[9]}</td>
 <td>${cols[8]}</td>
 <td>${cols[10]}</td>
-<td class="${statusClass}">${status}</td>
+<td><span class="${statusClass}">${status}</span></td>
 <td><a href="${cols[11]}" target="_blank">View</a></td>
 
 `;
 
 table.appendChild(tr);
+
+});
+
+let total=openCount+progressCount+closeCount;
+
+document.getElementById("total").innerText=total;
+document.getElementById("open").innerText=openCount;
+document.getElementById("progress").innerText=progressCount;
+document.getElementById("close").innerText=closeCount;
+
+createChart();
+
+});
+
+function createChart(){
+
+const ctx=document.getElementById("chart");
+
+new Chart(ctx,{
+
+type:"pie",
+
+data:{
+labels:["Open","Progress","Close"],
+datasets:[{
+data:[openCount,progressCount,closeCount],
+backgroundColor:["#ef4444","#facc15","#22c55e"]
+}]
+}
+
+});
+
+}
+
+document.getElementById("search").addEventListener("keyup",function(){
+
+let filter=this.value.toUpperCase();
+let rows=document.querySelectorAll("tbody tr");
+
+rows.forEach(row=>{
+
+let text=row.innerText.toUpperCase();
+
+row.style.display=text.includes(filter)?"":"none";
 
 });
 
