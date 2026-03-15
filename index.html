@@ -23,8 +23,9 @@ margin-bottom:30px;
 
 .dashboard{
 display:flex;
-gap:20px;
 justify-content:center;
+gap:20px;
+flex-wrap:wrap;
 margin-bottom:30px;
 }
 
@@ -32,13 +33,14 @@ margin-bottom:30px;
 background:#1e293b;
 padding:20px;
 border-radius:10px;
-width:200px;
+width:180px;
 text-align:center;
+box-shadow:0 0 10px rgba(0,0,0,0.4);
 }
 
 .card h2{
 margin:10px 0;
-font-size:30px;
+font-size:28px;
 }
 
 .search{
@@ -49,7 +51,7 @@ margin-bottom:20px;
 input{
 padding:10px;
 width:300px;
-border-radius:5px;
+border-radius:6px;
 border:none;
 }
 
@@ -58,12 +60,15 @@ width:100%;
 border-collapse:collapse;
 background:white;
 color:black;
+border-radius:8px;
+overflow:hidden;
 }
 
 th,td{
 padding:10px;
 border-bottom:1px solid #ddd;
 font-size:14px;
+text-align:left;
 }
 
 th{
@@ -78,24 +83,24 @@ background:#f1f5f9;
 .status-open{
 background:#ef4444;
 color:white;
-padding:5px 10px;
+padding:4px 8px;
 border-radius:5px;
 }
 
 .status-progress{
 background:#facc15;
-padding:5px 10px;
+padding:4px 8px;
 border-radius:5px;
 }
 
 .status-close{
 background:#22c55e;
 color:white;
-padding:5px 10px;
+padding:4px 8px;
 border-radius:5px;
 }
 
-.chart{
+.chart-container{
 width:400px;
 margin:40px auto;
 }
@@ -131,15 +136,15 @@ Close
 
 </div>
 
-<div class="chart">
-<canvas id="chart"></canvas>
+<div class="chart-container">
+<canvas id="statusChart"></canvas>
 </div>
 
 <div class="search">
-<input type="text" id="search" placeholder="Search NO Reservasi">
+<input type="text" id="search" placeholder="Search Reservasi / Problem / PIC">
 </div>
 
-<table id="table">
+<table>
 
 <thead>
 <tr>
@@ -154,7 +159,7 @@ Close
 </tr>
 </thead>
 
-<tbody></tbody>
+<tbody id="tableBody"></tbody>
 
 </table>
 
@@ -171,37 +176,55 @@ fetch(sheetURL)
 .then(data=>{
 
 let rows=data.split("\n").slice(1);
-let table=document.querySelector("tbody");
+let table=document.getElementById("tableBody");
 
 rows.forEach(row=>{
 
 let cols=row.split(",");
 
-let status=cols[15];
+if(cols.length<16) return;
 
-if(status==="Open") openCount++;
-if(status==="Progress") progressCount++;
-if(status==="Close") closeCount++;
+let reservasi=cols[3];
+let item=cols[4];
+let pn=cols[5];
+let problem=cols[9];
+let pic=cols[8];
+let tanggal=cols[10];
+let foto=cols[11];
+let status=(cols[15] || "").replace(/"/g,"").trim().toLowerCase();
 
+let statusLabel="";
 let statusClass="";
 
-if(status==="Open") statusClass="status-open";
-if(status==="Progress") statusClass="status-progress";
-if(status==="Close") statusClass="status-close";
+if(status==="open"){
+openCount++;
+statusLabel="Open";
+statusClass="status-open";
+}
+
+if(status==="progress"){
+progressCount++;
+statusLabel="Progress";
+statusClass="status-progress";
+}
+
+if(status==="close"){
+closeCount++;
+statusLabel="Close";
+statusClass="status-close";
+}
 
 let tr=document.createElement("tr");
 
 tr.innerHTML=`
-
-<td>${cols[3]}</td>
-<td>${cols[4]}</td>
-<td>${cols[5]}</td>
-<td>${cols[9]}</td>
-<td>${cols[8]}</td>
-<td>${cols[10]}</td>
-<td><span class="${statusClass}">${status}</span></td>
-<td><a href="${cols[11]}" target="_blank">View</a></td>
-
+<td>${reservasi}</td>
+<td>${item}</td>
+<td>${pn}</td>
+<td>${problem}</td>
+<td>${pic}</td>
+<td>${tanggal}</td>
+<td><span class="${statusClass}">${statusLabel}</span></td>
+<td><a href="${foto}" target="_blank">View</a></td>
 `;
 
 table.appendChild(tr);
@@ -221,9 +244,7 @@ createChart();
 
 function createChart(){
 
-const ctx=document.getElementById("chart");
-
-new Chart(ctx,{
+new Chart(document.getElementById("statusChart"),{
 
 type:"pie",
 
@@ -231,7 +252,11 @@ data:{
 labels:["Open","Progress","Close"],
 datasets:[{
 data:[openCount,progressCount,closeCount],
-backgroundColor:["#ef4444","#facc15","#22c55e"]
+backgroundColor:[
+"#ef4444",
+"#facc15",
+"#22c55e"
+]
 }]
 }
 
@@ -242,7 +267,7 @@ backgroundColor:["#ef4444","#facc15","#22c55e"]
 document.getElementById("search").addEventListener("keyup",function(){
 
 let filter=this.value.toUpperCase();
-let rows=document.querySelectorAll("tbody tr");
+let rows=document.querySelectorAll("#tableBody tr");
 
 rows.forEach(row=>{
 
